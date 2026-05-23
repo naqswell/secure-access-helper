@@ -1,6 +1,6 @@
 -- Рекурсивный дамп AX-дерева окон целевого приложения.
 -- Запусти когда auth-окно открыто:
---   osascript ~/Projects/secure-access-helper/debug-inspect.applescript > ~/axdump.txt 2>&1
+--   osascript ~/Projects/setup/secure-access-helper/debug-inspect.applescript > ~/axdump.txt 2>&1
 
 property maxDepth : 25
 

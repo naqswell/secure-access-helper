@@ -33,8 +33,8 @@ VPN-клиент при каждом подключении просит пар�
 ## Установка на новой машине
 
 ```bash
-git clone <repo-url> ~/Projects/secure-access-helper
-cd ~/Projects/secure-access-helper
+git clone <repo-url> ~/Projects/setup/secure-access-helper
+cd ~/Projects/setup/secure-access-helper
 ./install.sh
 ```
 
@@ -66,7 +66,7 @@ cd ~/Projects/secure-access-helper
 
 ```bash
 secure-access-helper                                  # если ставил симлинк
-~/Projects/secure-access-helper/connect.sh           # прямой вызов
+~/Projects/setup/secure-access-helper/connect.sh           # прямой вызов
 ```
 
 Что происходит:
@@ -121,7 +121,7 @@ Raycast Script Command, ярлык в **Shortcuts.app** с действием
    дамп пока auth-окно открыто:
 
    ```bash
-   osascript ~/Projects/secure-access-helper/debug-inspect.applescript > ~/axdump.txt
+   osascript ~/Projects/setup/secure-access-helper/debug-inspect.applescript > ~/axdump.txt
    ```
 
    Сравни вывод с тем, что ищет `fill.applescript`.
@@ -156,7 +156,7 @@ Keychain не переносится автоматически — пароль
 ## Снятие
 
 ```bash
-~/Projects/secure-access-helper/uninstall.sh
+~/Projects/setup/secure-access-helper/uninstall.sh
 ```
 
 Уберёт симлинк `secure-access-helper` из всех возможных локаций
