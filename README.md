@@ -153,6 +153,29 @@ Raycast Script Command, ярлык в **Shortcuts.app** с действием
 Keychain не переносится автоматически — пароль нужно ввести заново через
 `setup.sh` (или импортировать связку ключей через Migration Assistant).
 
+### Перенос корп-сертификата (client identity)
+
+`secure-access-helper` автоматизирует только ввод пароля. Сам доступ к Gateway даёт
+**клиентский сертификат (identity)** в Keychain + корп CA-цепочка — без них коннекта нет.
+Серт **user-bound** (issuer корп CA, EKU TLS Client Auth), не привязан к железу → переносим.
+
+1. На старой машине: Keychain Access → запись с приватным ключом (label = фамилия) →
+   Export → Personal Information Exchange (`.p12`, задать пароль).
+   CLI: `security export -k login.keychain-db -t identities -f pkcs12 -o cert.p12`.
+2. Перенести `.p12` защищённым каналом (AirDrop / scp по Tailscale-LAN), **не через облако**.
+   После импорта файл удалить.
+3. На новой: `security import cert.p12 -k ~/Library/Keychains/login.keychain-db`
+   (или двойной клик в Keychain Access).
+4. Импортировать корп root/intermediate CA (`.cer`) в **System** keychain — иначе
+   валидация клиентского/серверного серта не пройдёт.
+5. Дальше обычный `install.sh` + `setup.sh`.
+
+**Мульти-девайс:** один user-серт на нескольких машинах работает, но NetScaler покажет
+**Transfer Logon** (активная сессия с другого устройства) и зафиксирует второй serial в
+audit. **Не держать две активные корп-сессии одновременно.** Когда mini станет основным —
+убрать identity со старой машины (Keychain Access → удалить), но **не отзывать** серт
+(revoke сломает и mini — он user-bound). Не коммитить `.p12`/`.cer`/`account` в git.
+
 ## Снятие
 
 ```bash
