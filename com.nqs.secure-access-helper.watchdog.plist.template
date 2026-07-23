@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Шаблон LaunchAgent для watchdog авто-реконнекта. @REPO@ и @HOME@
+     подставляет install.sh / `secure-access-helper install-agent`.
+     Специально НЕ задаём HTTPS_PROXY: проверки сети идут через route/ifconfig,
+     а scutil/security/osascript в прокси не нуждаются. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nqs.secure-access-helper.watchdog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>@REPO@/watchdog.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/sbin:/usr/bin:/sbin:/bin</string>
+        <key>HOME</key>
+        <string>@HOME@</string>
+        <!-- Резолвнутый конфиг-каталог: держит CLI и агент на одном пути. -->
+        <key>XDG_CONFIG_HOME</key>
+        <string>@XDG@</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>@HOME@/Library/Logs/secure-access-helper.watchdog.log</string>
+    <key>StandardErrorPath</key>
+    <string>@HOME@/Library/Logs/secure-access-helper.watchdog.log</string>
+</dict>
+</plist>

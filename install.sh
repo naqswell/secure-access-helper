@@ -79,8 +79,26 @@ note "OK: ${APP_PATH}"
 # ---------- step 2: chmod ----------
 
 bold "==> chmod +x"
-chmod +x "${SCRIPT_DIR}/setup.sh" "${SCRIPT_DIR}/connect.sh" "${SCRIPT_DIR}/uninstall.sh" 2>/dev/null || true
+chmod +x "${SCRIPT_DIR}/setup.sh" "${SCRIPT_DIR}/connect.sh" "${SCRIPT_DIR}/uninstall.sh" "${SCRIPT_DIR}/watchdog.sh" 2>/dev/null || true
 note "OK"
+
+# ---------- step 2b: хелпер раскладки (setlayout) ----------
+bold "==> Хелпер раскладки (setlayout)"
+if command -v swiftc >/dev/null 2>&1; then
+  mkdir -p "${SCRIPT_DIR}/bin"
+  SWIFT_ERR=$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/sah_swiftc_err.$$")
+  if swiftc -O "${SCRIPT_DIR}/setlayout.swift" -o "${SCRIPT_DIR}/bin/setlayout" 2>"$SWIFT_ERR"; then
+    note "OK: собран ${SCRIPT_DIR}/bin/setlayout"
+  else
+    warn "swiftc не смог собрать setlayout:"
+    cat "$SWIFT_ERR" >&2 || true
+    warn "Не критично: пароль будет вводиться через clipboard-paste (fallback)."
+  fi
+  rm -f "$SWIFT_ERR"
+else
+  warn "swiftc не найден (нет Xcode CLT). Пароль будет вводиться через clipboard-paste (fallback)."
+  warn "Для форса латинской раскладки: xcode-select --install"
+fi
 
 # ---------- step 3: Accessibility ----------
 
@@ -100,7 +118,7 @@ else
   fi
   echo "Без этого System Events не сможет нажимать кнопки в приложении."
   echo
-  read -rp "Нажми Enter, чтобы открыть Системные настройки..." _
+  read -rp "Нажми Enter, чтобы открыть Системные настройки..." _ || { err "Нужен интерактивный терминал."; exit 1; }
 
   # Современный URL (macOS 13+), фолбэк на старый URL, потом на prefPane
   if ! open "x-apple.settings.PrivacySecurity.extension?Privacy_Accessibility" 2>/dev/null; then
@@ -113,7 +131,7 @@ else
   # Цикл проверки — пока не выдадут права
   while true; do
     echo
-    read -rp "Когда добавил терминал в список и включил галку — нажми Enter для проверки..." _
+    read -rp "Когда добавил терминал в список и включил галку — нажми Enter для проверки..." _ || { err "Нужен интерактивный терминал."; exit 1; }
     if accessibility_ok; then
       note "OK: права выданы"
       break
@@ -228,7 +246,18 @@ if (( existing_count == 0 )); then
   fi
 fi
 
-# ---------- step 6: Финал ----------
+# ---------- step 6: watchdog-агент (авто-реконнект) ----------
+
+bold "==> Watchdog авто-реконнекта (launchd-агент)"
+echo "Агент держит VPN поднятым и автоматически переподключает при обрыве."
+echo "Учти: агенту нужен ОТДЕЛЬНЫЙ Accessibility-грант (TCC launchd ≠ терминала)."
+if ask_yn "Установить и загрузить watchdog-агент сейчас?" N; then
+  "${SCRIPT_DIR}/connect.sh" install-agent || warn "install-agent завершился с ошибкой."
+else
+  note "Пропущено. Включить позже: secure-access-helper install-agent"
+fi
+
+# ---------- step 7: Финал ----------
 
 bold "==> Готово"
 echo
@@ -241,6 +270,12 @@ if [[ -n "$final_link" ]]; then
   echo "  ${SYMLINK_NAME}                # через PATH (из ${final_link})"
 fi
 echo "  ${SCRIPT_DIR}/connect.sh   # напрямую"
+echo
+echo "Полезные команды:"
+echo "  ${SYMLINK_NAME} status         # состояние туннеля / агента / backoff"
+echo "  ${SYMLINK_NAME} doctor         # диагностика окружения"
+echo "  ${SYMLINK_NAME} install-agent  # включить watchdog авто-реконнекта"
+echo "  ${SYMLINK_NAME} off            # отключить и выключить авто-реконнект"
 echo
 echo "При первом запуске Keychain Access попросит подтверждение на чтение пароля —"
 echo "нажми 'Always Allow', чтобы дальше скрипт работал тихо."

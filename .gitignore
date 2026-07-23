@@ -1,3 +1,5 @@
 .DS_Store
 *.log
 citrix-axdump.txt
+# Скомпилированный хелпер раскладки (собирается install.sh через swiftc).
+/bin/
