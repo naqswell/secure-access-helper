@@ -79,7 +79,7 @@ note "OK: ${APP_PATH}"
 # ---------- step 2: chmod ----------
 
 bold "==> chmod +x"
-chmod +x "${SCRIPT_DIR}/setup.sh" "${SCRIPT_DIR}/connect.sh" "${SCRIPT_DIR}/uninstall.sh" "${SCRIPT_DIR}/watchdog.sh" 2>/dev/null || true
+chmod +x "${SCRIPT_DIR}/setup.sh" "${SCRIPT_DIR}/connect.sh" "${SCRIPT_DIR}/uninstall.sh" "${SCRIPT_DIR}/citrix-vpn-watchdog" 2>/dev/null || true
 note "OK"
 
 # ---------- step 2b: хелпер раскладки (setlayout) ----------

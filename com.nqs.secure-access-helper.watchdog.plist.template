@@ -3,7 +3,9 @@
 <!-- Шаблон LaunchAgent для watchdog авто-реконнекта. @REPO@ и @HOME@
      подставляет install.sh / `secure-access-helper install-agent`.
      Специально НЕ задаём HTTPS_PROXY: проверки сети идут через route/ifconfig,
-     а scutil/security/osascript в прокси не нуждаются. -->
+     а scutil/security/osascript в прокси не нуждаются.
+     ProgramArguments[0] — сам скрипт, без `/bin/bash`: macOS показывает в
+     Login Items basename этого пути, и он должен читаться как имя сервиса. -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
@@ -11,8 +13,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>@REPO@/watchdog.sh</string>
+        <string>@REPO@/citrix-vpn-watchdog</string>
     </array>
 
     <key>RunAtLoad</key>

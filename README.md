@@ -24,7 +24,7 @@
 | `uninstall.sh`                         | Снятие: агент, симлинк, конфиг, Keychain                           |
 | `setup.sh`                             | Сохраняет логин (конфиг) и пароль (Keychain, без argv-экспозиции)  |
 | `connect.sh`                           | CLI: `connect`/`status`/`off`/`pause`/`watch`/`doctor`/`install-agent`… |
-| `watchdog.sh`                          | Цикл авто-реконнекта (обычно запускает launchd)                   |
+| `citrix-vpn-watchdog`                  | Цикл авто-реконнекта (точка входа LaunchAgent; без `.sh` — имя видно в Login Items) |
 | `lib.sh`                               | Общие хелперы (scutil-состояние, backoff, lock, уведомления)      |
 | `fill.applescript`                     | UI scripting: клики, ввод пароля (layout-safe), sheet'ы           |
 | `setlayout.swift`                      | Хелпер форса латинской раскладки (собирается в `bin/setlayout`)   |
@@ -104,7 +104,7 @@ secure-access-helper resume       # снять паузу
 secure-access-helper install-agent      # ставит + грузит LaunchAgent
 ```
 
-Как работает `watchdog.sh` (раз в `SAH_INTERVAL`, сигнал — **scutil**):
+Как работает `citrix-vpn-watchdog` (раз в `SAH_INTERVAL`, сигнал — **scutil**):
 
 | Состояние scutil            | Действие                                                        |
 | --------------------------- | -------------------------------------------------------------- |
@@ -132,6 +132,8 @@ secure-access-helper install-agent      # ставит + грузит LaunchAgen
    > Системные настройки → Конфиденциальность и безопасность → **Универсальный
    > доступ** → включи пункт для агента (может называться `bash` или `osascript`).
 
+   Грант TCC привязан к **интерпретатору** (`/bin/bash`), а не к имени скрипта,
+   поэтому здесь пункт так и останется `bash` — в отличие от Login Items (см. п. 4).
    На свежих macOS такой пункт для голого `/bin/bash → osascript` иногда не
    появляется/не «прилипает» — тогда фоновый реконнект не заработает (ограничение
    TCC); держи VPN ручным `connect`/хоткеем.
@@ -139,6 +141,10 @@ secure-access-helper install-agent      # ставит + грузит LaunchAgen
    Keychain реконнект не пройдёт (нет ни доступа к паролю, ни к UI).
 3. **`doctor` проверяет контекст терминала, не агента** — его «ok» по Accessibility
    не гарантирует грант агенту. Реальная проверка — живой обрыв + лог.
+4. **Имя в Login Items.** macOS показывает в «Основные → Объекты входа и расширения»
+   basename из `ProgramArguments[0]`, поэтому агент запускает скрипт напрямую
+   (shebang + бит `+x`), а не через `/bin/bash <скрипт>` — иначе в списке был бы
+   безликий `bash`. Отсюда и имя файла без расширения: `citrix-vpn-watchdog`.
 
 Лог: `~/Library/Logs/secure-access-helper.watchdog.log`.
 

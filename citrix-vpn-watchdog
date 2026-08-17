@@ -1,6 +1,12 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # secure-access-helper watchdog — держит Citrix VPN поднятым и переподключает при обрыве.
 # Обычно запускается launchd-агентом (com.nqs.secure-access-helper.watchdog).
+#
+# Точка входа агента: launchd вызывает ЭТОТ файл напрямую (без `/bin/bash` в
+# ProgramArguments), поэтому в Login Items виден понятный `citrix-vpn-watchdog`,
+# а не безликий `bash`. Shebang намеренно `/bin/bash`, а не `/usr/bin/env bash`:
+# грант Accessibility в TCC выдан на путь `/bin/bash`, и интерпретатор должен
+# остаться ровно тем же, иначе авто-реконнект потеряет права на UI scripting.
 #
 # Логика тика (раз в SAH_INTERVAL секунд), сигнал состояния — АВТОРИТЕТНЫЙ scutil:
 #   Connected                  -> ничего; сбросить backoff (только тут!)
