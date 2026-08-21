@@ -30,17 +30,31 @@ fi
 # «Always Allow» — иначе первый unattended-реконнект агента завис бы на диалоге,
 # который фоновому агенту некому подтвердить. (Тонкий размен: любой процесс от
 # твоего имени сможет прочитать пароль через `security -w` без подтверждения.)
+# Пересоздаём элемент, а не обновляем через `-U`: на существующем элементе `-U`
+# меняет только секрет, а `-T` молча игнорирует — и если ACL уже испорчен, само
+# обновление упрётся в тот же диалог, который мы и пытаемся убрать.
+security delete-generic-password -a "${ACCOUNT}" -s "${SERVICE}" >/dev/null 2>&1 || true
+
 echo "Введи пароль VPN (security спросит его сам, ввод скрыт, с подтверждением):"
 if ! security add-generic-password \
        -a "${ACCOUNT}" \
        -s "${SERVICE}" \
-       -U \
        -j "secure-access-helper" \
        -T /usr/bin/security \
        -w; then
   echo "Не удалось записать пароль в Keychain (или ввод отменён)." >&2
   echo "Если связка заблокирована: Keychain Access → Login → Unlock, и повтори." >&2
   exit 1
+fi
+
+# `/usr/bin/security` живёт в партиции `apple-tool:`, и решение о доступе идёт по
+# partition list отдельно от списка доверенных приложений. Правка пароля через
+# Keychain Access.app сбрасывает список на `apple:` — тогда фоновое чтение уходит
+# в диалог, подтвердить который агенту некому. Запросит пароль login-связки.
+if ! security set-generic-password-partition-list \
+       -S apple-tool:,apple: -a "${ACCOUNT}" -s "${SERVICE}" >/dev/null; then
+  echo "ВНИМАНИЕ: partition list не выставлен — фоновое чтение может упереться в диалог." >&2
+  echo "Повтори вручную: security set-generic-password-partition-list -S apple-tool:,apple: -a ${ACCOUNT} -s ${SERVICE}" >&2
 fi
 
 # Логин в конфиг-файл (0600) — только после успешной записи пароля.

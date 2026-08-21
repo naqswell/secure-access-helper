@@ -36,7 +36,12 @@ run_fill() {
   opid=$!
   while kill -0 "$opid" 2>/dev/null; do
     if [ "$waited" -ge "$SAH_OSA_MAX" ]; then
-      kill -TERM "$opid" 2>/dev/null; sleep 1; kill -KILL "$opid" 2>/dev/null; killed=1; break
+      kill -TERM "$opid" 2>/dev/null; sleep 1; kill -KILL "$opid" 2>/dev/null
+      # fill читает пароль через `security`, и тот переживает смерть osascript:
+      # встав на диалоге Keychain, сирота держит окно, пока ему не ответят, —
+      # а фоновому агенту отвечать некому, и каждая попытка копит ещё одно окно.
+      pkill -9 -f "find-generic-password -a $acct -s $SERVICE" 2>/dev/null || true
+      killed=1; break
     fi
     sleep 1; waited=$((waited + 1))
   done
@@ -200,10 +205,13 @@ cmd_doctor() {
   if [ -d "/Applications/$APP_NAME.app" ]; then echo "[ok] приложение установлено"; else echo "[!!] нет /Applications/$APP_NAME.app"; ok=0; fi
   acct=$(resolve_account || true)
   if [ -n "$acct" ]; then echo "[ok] аккаунт: $acct"; else echo "[!!] аккаунт не настроен (setup.sh)"; ok=0; fi
-  if [ -n "$acct" ] && security find-generic-password -a "$acct" -s "$SERVICE" -w >/dev/null 2>&1; then
+  # Без таймаута тут вис бы сам doctor: при испорченном ACL `security` не падает,
+  # а ждёт ответа на диалог Keychain, которого в этом контексте может не быть.
+  if [ -n "$acct" ] && perl -e 'alarm 10; exec @ARGV' \
+       security find-generic-password -a "$acct" -s "$SERVICE" -w >/dev/null 2>&1; then
     echo "[ok] пароль читается из Keychain"
   else
-    echo "[!!] пароль из Keychain не читается (setup.sh / 'Always Allow')"; ok=0
+    echo "[!!] пароль из Keychain не читается или чтение висит на диалоге — перезапусти setup.sh"; ok=0
   fi
   axout=$(osascript -e 'tell application "System Events" to keystroke ""' 2>&1) || true
   case "$axout" in
